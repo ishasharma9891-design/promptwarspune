@@ -1,3 +1,5 @@
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+
 /**
  * Generates the prompt for the adaptive learning assistant.
  * @param {string} message - Sanitized user message.
@@ -5,26 +7,34 @@
  * @returns {string}
  */
 const generatePrompt = (message, level) => {
-  return `Adaptive Learning Response for ${message}. Level: ${level}. 
-  [CONTENT]...[EXAMPLE]...[QUESTION]...`;
+  return `You are Yaris, an adaptive learning assistant. 
+  Current user level: ${level}.
+  User said: "${message}".
+  
+  Format your response exactly as follows:
+  [CONTENT] Your explanation in HTML (p, b, i, code tags only)
+  [EXAMPLE] A simple analogy or real-world example
+  [QUESTION] A Socratic question to test their understanding
+  
+  Do not include any other text.`;
 };
 
 /**
- * Handles streaming response from Anthropic Claude.
- * @param {Object} anthropic - SDK instance.
+ * Handles streaming response from Google Gemini.
+ * @param {Object} genAI - Gemini SDK instance.
  * @param {string} prompt - Constructed prompt.
  * @param {Object} res - Express response object.
  */
-const streamClaudeResponse = async (anthropic, prompt, res) => {
-  const stream = await anthropic.messages.create({
-    model: "claude-3-opus-20240229",
-    max_tokens: 1024,
-    messages: [{ role: "user", content: prompt }],
-    stream: true,
-  });
-  for await (const chunk of stream) {
-    if (chunk.type === 'content_block_delta') res.write(chunk.delta.text);
+const streamGeminiResponse = async (genAI, prompt, res) => {
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const result = await model.generateContentStream(prompt);
+
+  for await (const chunk of result.stream) {
+    const chunkText = chunk.text();
+    if (chunkText) {
+      res.write(chunkText);
+    }
   }
 };
 
-module.exports = { generatePrompt, streamClaudeResponse };
+module.exports = { generatePrompt, streamGeminiResponse };
