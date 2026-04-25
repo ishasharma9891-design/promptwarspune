@@ -10,7 +10,9 @@ import { getBaseUrl } from './apiConfig';
  */
 export const streamAiResponse = async (message, token, onUpdate) => {
   const baseUrl = getBaseUrl();
-  const response = await fetch(`${baseUrl}/api/chat`, {
+  const url = `${baseUrl}/api/chat`;
+  console.log(`[AI Brain] Attempting connection to: ${url}`);
+  const response = await fetch(url, {
     method: 'POST',
     headers: { 
       'Content-Type': 'application/json',

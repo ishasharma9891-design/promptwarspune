@@ -17,20 +17,27 @@ const ProfileDashboard = () => {
 
   useEffect(() => {
     const fetchInitial = async () => {
-      const data = await getProfileCached(async () => {
-        const docSnap = await getDoc(doc(db, "users", "mock-user"));
-        return docSnap.exists() ? docSnap.data() : null;
-      });
-      setProfile(data);
-      setLoading(false);
+      try {
+        const data = await getProfileCached(async () => {
+          const docSnap = await getDoc(doc(db, "users", "mock-user"));
+          return docSnap.exists() ? docSnap.data() : null;
+        });
+        if (data) setProfile(data);
+      } catch (err) {
+        console.error("Firestore connectivity error:", err);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchInitial();
-    return onSnapshot(doc(db, "users", "mock-user"), (doc) => {
-      if (doc.exists()) {
-        setProfile(doc.data());
-        updateProfileCache(doc.data());
-      }
-    });
+    try {
+      return onSnapshot(doc(db, "users", "mock-user"), (doc) => {
+        if (doc.exists()) {
+          setProfile(doc.data());
+          updateProfileCache(doc.data());
+        }
+      }, (err) => console.error("Snapshot error:", err));
+    } catch (e) { console.error("Listener failed:", e); }
   }, []);
 
   if (loading) return <div className="p-8 text-white">Loading journey...</div>;

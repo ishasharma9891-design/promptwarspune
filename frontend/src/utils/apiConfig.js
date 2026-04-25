@@ -1,14 +1,14 @@
 /**
- * Determines the base URL for API requests based on the environment.
+ * Determines the base URL for API requests.
+ * Uses relative paths by default to support Vite proxy and same-origin deployments.
  * @returns {string}
  */
 export const getBaseUrl = () => {
-  // Check if running on localhost (Vite dev server)
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return 'http://localhost:5000';
+  // Allow explicit override via env variable
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
   }
   
-  // In production, use relative path if served from same origin,
-  // or a specific Cloud Run URL if configured.
-  return import.meta.env.VITE_API_URL || '';
+  // Default to relative path (works with Vite proxy and same-origin prod)
+  return '';
 };

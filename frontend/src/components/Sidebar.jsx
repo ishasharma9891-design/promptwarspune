@@ -1,8 +1,23 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BookOpen, LayoutDashboard, Zap, Shield, Flame } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { db } from '../firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 const Sidebar = ({ activeTab, setActiveTab }) => {
+  const [userLevel, setUserLevel] = useState('Beginner');
+  const [xp, setXp] = useState(0);
+
+  useEffect(() => {
+    return onSnapshot(doc(db, "users", "mock-user"), (doc) => {
+      if (doc.exists()) {
+        const data = doc.data();
+        setUserLevel(data.expertise_level || 'Beginner');
+        setXp(data.total_xp || 0);
+      }
+    });
+  }, []);
+
   return (
     <aside className="w-64 h-full bg-brand-surface/50 border-r border-brand-card p-6 flex flex-col justify-between backdrop-blur-xl relative z-10" role="complementary" aria-label="Main Navigation">
       <section>
@@ -67,21 +82,21 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Shield className="w-4 h-4 text-brand-accent" aria-hidden="true" />
-              <span className="text-sm font-medium text-white">Intermediate</span>
+              <span className="text-sm font-medium text-white">{userLevel}</span>
             </div>
-            <span className="text-xs text-brand-accent font-bold">Lvl 12</span>
+            <span className="text-xs text-brand-accent font-bold">Lvl {Math.floor(xp / 100) + 1}</span>
           </div>
           <div 
             className="w-full h-2 bg-brand-dark rounded-full overflow-hidden"
             role="progressbar"
-            aria-valuenow="70"
+            aria-valuenow={(xp % 100)}
             aria-valuemin="0"
             aria-valuemax="100"
             aria-label="Level progress"
           >
-            <div className="h-full bg-gradient-to-r from-brand-primary to-brand-accent" style={{ width: '70%' }} />
+            <div className="h-full bg-gradient-to-r from-brand-primary to-brand-accent" style={{ width: `${(xp % 100)}%` }} />
           </div>
-          <p className="text-xs text-text-secondary mt-2 text-right">350 / 500 XP</p>
+          <p className="text-xs text-text-secondary mt-2 text-right">{xp} XP</p>
         </article>
       </section>
     </aside>
