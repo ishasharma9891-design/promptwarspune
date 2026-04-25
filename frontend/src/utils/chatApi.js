@@ -1,4 +1,5 @@
 import DOMPurify from 'dompurify';
+import { getBaseUrl } from './apiConfig';
 
 /**
  * Streams AI response from the backend and updates the message incrementally.
@@ -8,7 +9,8 @@ import DOMPurify from 'dompurify';
  * @returns {Promise<void>}
  */
 export const streamAiResponse = async (message, token, onUpdate) => {
-  const response = await fetch('/api/chat', {
+  const baseUrl = getBaseUrl();
+  const response = await fetch(`${baseUrl}/api/chat`, {
     method: 'POST',
     headers: { 
       'Content-Type': 'application/json',
