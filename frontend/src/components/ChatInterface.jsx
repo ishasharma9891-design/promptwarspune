@@ -10,7 +10,9 @@ import ChatInput from './chat/ChatInput';
  * @returns {JSX.Element}
  */
 const ChatInterface = () => {
-  const { messages, input, setInput, userLevel, isLoading, messagesEndRef, handleSend } = useChatSession();
+  const { 
+    messages, input, setInput, userLevel, isLoading, messagesEndRef, handleSend, handleChallengeComplete 
+  } = useChatSession();
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, messagesEndRef]);
