@@ -32,13 +32,19 @@ app.get('/api/profile', verifyAuth, async (req, res) => {
 
 app.post('/api/chat', verifyAuth, async (req, res) => {
   const message = validator.escape(req.body.message || '');
+  logger.info(`Chat request received: "${message.substring(0, 50)}..."`);
+  
   res.setHeader('Content-Type', 'text/event-stream');
   try {
     const profile = await getUserProfile(db, req.user.uid, DEFAULT_PROFILE);
+    logger.info(`Using profile level: ${profile.expertise_level}`);
+    
     const prompt = generatePrompt(message, profile.expertise_level);
     await streamClaudeResponse(anthropic, prompt, res);
     updateLastInteraction(db, req.user.uid);
-  } catch (err) { logger.error(err); }
+  } catch (err) { 
+    logger.error(`Chat processing error: ${err.message}`);
+  }
   res.end();
 });
 
