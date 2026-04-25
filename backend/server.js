@@ -12,7 +12,18 @@ const app = express();
 const db = initFirebase();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'dummy');
 
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://www.gstatic.com", "https://apis.google.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https://*.googleusercontent.com"],
+      connectSrc: ["'self'", "https://*.googleapis.com", "http://localhost:5000"]
+    }
+  }
+}));
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 
@@ -27,15 +38,21 @@ app.post('/api/chat', verifyAuth, async (req, res) => {
   try {
     const profile = await getUserProfile(db, req.user.uid, { expertise_level: 'Intermediate' });
     const prompt = generatePrompt(message, profile.expertise_level);
-    await streamGeminiResponse(genAI, prompt, res);
+    
+    // Veteran optimization: Scale creativity based on learner level
+    const temperature = profile.expertise_level === 'Advanced' ? 0.9 : 0.4;
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash", generationConfig: { temperature } });
+    
+    await streamGeminiResponse(model, prompt, res);
     
     logger.info('Chat Request', {
       user_uid: req.user.uid,
       response_time_ms: Date.now() - start,
-      ai_provider: 'gemini'
+      ai_provider: 'gemini',
+      level: profile.expertise_level
     });
     updateLastInteraction(db, req.user.uid);
-  } catch (err) { logger.error(`Chat Error: ${err.message}`, { uid: req.user.uid }); }
+  } catch (err) { logger.error(`Gemini error: ${err.message}`, { uid: req.user.uid }); }
   res.end();
 });
 

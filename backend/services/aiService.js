@@ -21,12 +21,11 @@ const generatePrompt = (message, level) => {
 
 /**
  * Handles streaming response from Google Gemini.
- * @param {Object} genAI - Gemini SDK instance.
+ * @param {Object} model - Pre-configured Gemini model instance.
  * @param {string} prompt - Constructed prompt.
  * @param {Object} res - Express response object.
  */
-const streamGeminiResponse = async (genAI, prompt, res) => {
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const streamGeminiResponse = async (model, prompt, res) => {
   const result = await model.generateContentStream(prompt);
 
   for await (const chunk of result.stream) {
