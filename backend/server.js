@@ -1,107 +1,45 @@
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
-
-dotenv.config();
+const helmet = require('helmet');
+const compression = require('compression');
+const Anthropic = require('@anthropic-ai/sdk');
+const validator = require('validator');
+const { initFirebase } = require('./config/firebase');
+const { apiLimiter, verifyAuth, logger } = require('./middleware/security');
+const { getUserProfile, updateLastInteraction } = require('./utils/db');
+const { generatePrompt, streamClaudeResponse } = require('./services/aiService');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const db = initFirebase();
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || 'dummy' });
+const DEFAULT_PROFILE = { expertise_level: 'Intermediate', preferred_analogies: ['Food'] };
 
-app.use(cors());
-app.use(express.json());
+app.use(helmet());
+app.use(cors({ origin: '*' }));
+app.use(express.json({ limit: '10kb' }));
+app.use(compression());
+app.use('/api/', apiLimiter);
 
-// Mock Data for User Profile
-let userProfile = {
-  expertise_level: 'Intermediate',
-  struggle_log: [],
-  mastered_concepts: ['JavaScript Fundamentals'],
-  preferred_analogies: ['Food', 'Real-world operations']
-};
-
-const Anthropic = require('@anthropic-ai/sdk');
-
-// ... (keep previous config code) ...
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
-
-// --- Yaris Core Tracking Engine API ---
-
-// 1. Get Learner Profile
-app.get('/api/profile', (req, res) => {
-  res.json(userProfile);
-});
-
-// 2. Chat/Learning Session Endpoint
-app.post('/api/chat', async (req, res) => {
-  const { message, context } = req.body;
-  
+app.get('/api/profile', verifyAuth, async (req, res) => {
   try {
-    const prompt = `
-      You are Yaris, an intelligent adaptive learning assistant.
-      The user's current expertise level is: ${userProfile.expertise_level}.
-      They prefer analogies related to: ${userProfile.preferred_analogies.join(', ')}.
-      
-      Respond to the user's message using the strict 5-block structure:
-      1. Core Explanation (tailored to their level)
-      2. Contextual Example/Analogy
-      3. System Diagram description (if applicable)
-      4. Socratic Question to test understanding
-      
-      Format the output as a JSON object with keys: content (HTML string for explanation), example (string), diagram (boolean), question (string). 
-      If the user expresses confusion, set type to 'recovery'.
-      
-      User message: "${message}"
-    `;
-
-    const response = await anthropic.messages.create({
-      model: "claude-3-opus-20240229", // Use an appropriate model
-      max_tokens: 1024,
-      messages: [{ role: "user", content: prompt }]
-    });
-    
-    // In a production app, you would carefully parse the JSON response here.
-    // For now, we'll try to extract what we can or fall back to mock structure if parsing fails.
-    let aiData = {};
-    try {
-        // Attempt to extract JSON if Claude wrapped it in text
-        const textContent = response.content[0].text;
-        const jsonMatch = textContent.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-            aiData = JSON.parse(jsonMatch[0]);
-        }
-    } catch (e) {
-        console.error("Failed to parse Claude JSON response:", e);
-    }
-
-    const finalResponse = {
-      level: userProfile.expertise_level,
-      content: aiData.content || `<p>${response.content[0].text.replace(/\n/g, '<br/>')}</p>`,
-      example: aiData.example || "",
-      diagram: aiData.diagram || false,
-      question: aiData.question || "",
-      updatedProfile: userProfile
-    };
-
-    res.json(finalResponse);
-
-  } catch (error) {
-    console.error("Error communicating with Anthropic:", error);
-    res.status(500).json({ error: "Failed to generate AI response" });
+    const profile = await getUserProfile(db, req.user.uid, DEFAULT_PROFILE);
+    res.json(profile);
+  } catch (err) {
+    logger.error(err);
+    res.status(500).send();
   }
 });
 
-// 3. Challenge Engine Endpoint
-app.post('/api/challenge/generate', (req, res) => {
-  res.json({
-    type: 'scenario-solving',
-    scenario: "You have an API call that takes 3 seconds. How do you prevent the UI from freezing?",
-    options: ["Use a synchronous request", "Use a Promise/async", "Use a timeout loop"],
-    correct: 1
-  });
+app.post('/api/chat', verifyAuth, async (req, res) => {
+  const message = validator.escape(req.body.message || '');
+  res.setHeader('Content-Type', 'text/event-stream');
+  try {
+    const profile = await getUserProfile(db, req.user.uid, DEFAULT_PROFILE);
+    const prompt = generatePrompt(message, profile.expertise_level);
+    await streamClaudeResponse(anthropic, prompt, res);
+    updateLastInteraction(db, req.user.uid);
+  } catch (err) { logger.error(err); }
+  res.end();
 });
 
-app.listen(PORT, () => {
-  console.log(`Yaris backend running on port ${PORT}`);
-});
+app.listen(process.env.PORT || 5000, () => logger.info('Started'));

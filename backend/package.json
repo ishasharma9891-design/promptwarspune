@@ -12,10 +12,19 @@
   "type": "commonjs",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.1",
+    "@google-cloud/logging-winston": "^6.0.1",
+    "@google-cloud/storage": "^7.19.0",
+    "compression": "^1.8.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "firebase-admin": "^13.8.0"
+    "express-rate-limit": "^8.4.1",
+    "firebase-admin": "^13.8.0",
+    "helmet": "^8.1.0",
+    "jest": "^30.3.0",
+    "supertest": "^7.2.2",
+    "validator": "^13.11.0",
+    "winston": "^3.19.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
