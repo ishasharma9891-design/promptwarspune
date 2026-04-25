@@ -34,6 +34,8 @@ const ChatInterface = () => {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
 
+  const [isLoading, setIsLoading] = useState(false);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -42,24 +44,49 @@ const ChatInterface = () => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || isLoading) return;
 
-    setMessages([...messages, { id: Date.now(), type: 'user', content: input }]);
+    const userMessage = { id: Date.now(), type: 'user', content: input };
+    setMessages(prev => [...prev, userMessage]);
     setInput('');
+    setIsLoading(true);
 
-    // Mock bot response after 1s
-    setTimeout(() => {
+    try {
+      const response = await fetch('https://isha12345-761085713268.asia-south1.run.app/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: input, context: {} }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const data = await response.json();
+
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
         type: 'bot',
-        level: 'Intermediate',
-        content: `<p>That's right! You'd use <code>Promise.all()</code> to run them concurrently. It takes an array of promises and returns a single promise that resolves when all of them resolve.</p>`,
-        example: `Like ordering a burger, fries, and a drink at the same time. You wait for all three to be ready before you start eating, rather than ordering them one by one.`,
-        question: `What happens if one of the promises in the <code>Promise.all()</code> array rejects?`,
+        level: data.level || 'Intermediate',
+        content: data.content || `<p>Sorry, I couldn't generate a response.</p>`,
+        example: data.example || null,
+        diagram: data.diagram || null,
+        question: data.question || null,
       }]);
-    }, 1500);
+    } catch (error) {
+      console.error('Error fetching AI response:', error);
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        type: 'bot',
+        content: `<p class="text-red-400">Sorry, there was an error connecting to the AI brain.</p>`
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -177,9 +204,9 @@ const ChatInterface = () => {
           <button 
             type="submit"
             className="p-3 rounded-xl bg-gradient-to-r from-brand-primary to-brand-secondary text-white hover:opacity-90 transition-opacity disabled:opacity-50"
-            disabled={!input.trim()}
+            disabled={!input.trim() || isLoading}
           >
-            <Send className="w-5 h-5" />
+            {isLoading ? <span className="animate-pulse">...</span> : <Send className="w-5 h-5" />}
           </button>
         </form>
       </div>
