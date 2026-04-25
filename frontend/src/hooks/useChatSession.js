@@ -42,7 +42,14 @@ export const useChatSession = () => {
       await streamAiResponse(input, token, (data) => {
         setMessages(prev => prev.map(m => m.id === botId ? { ...m, ...data, isLoading: false } : m));
       });
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error(err);
+      setMessages(prev => prev.map(m => m.id === botId ? { 
+        ...m, 
+        content: DOMPurify.sanitize(`<p class="text-red-400"><b>Connection Error:</b> I couldn't reach the AI brain. Please check your internet or try again.</p>`),
+        isLoading: false 
+      } : m));
+    }
     finally { setIsLoading(false); }
   };
 
