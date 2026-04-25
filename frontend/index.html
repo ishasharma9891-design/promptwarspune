@@ -4,10 +4,39 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    
+    <!-- SEO Meta Tags -->
+    <title>Yaris | Your Premium Adaptive AI Learning Assistant</title>
+    <meta name="description" content="Master complex concepts with Yaris, the AI tutor that adapts to your learning level. Features real-time streaming, interactive challenges, and personalized progress tracking." />
+    <meta name="keywords" content="AI learning, adaptive education, Yaris tutor, personalized learning, interactive challenges" />
+    <meta name="author" content="Yaris AI Team" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://yaris-learning.ai/" />
+    <meta property="og:title" content="Yaris | Adaptive AI Learning Assistant" />
+    <meta property="og:description" content="Transform your learning journey with Yaris. Interactive AI-driven education that evolves with you." />
+    <meta property="og:image" content="/og-image.png" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:title" content="Yaris | Adaptive AI Learning Assistant" />
+    <meta property="twitter:description" content="Personalized AI tutoring that adapts to your mastery level in real-time." />
+    
+    <!-- PWA / Mobile Theme -->
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   </head>
-  <body>
+  <body class="bg-brand-dark overflow-hidden">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    
+    <!-- Fallback for browsers without JS -->
+    <noscript>
+      <div style="padding: 20px; text-align: center; color: white;">
+        <h1>Yaris Learning Assistant</h1>
+        <p>This application requires JavaScript to function. Please enable it in your browser settings.</p>
+      </div>
+    </noscript>
   </body>
 </html>

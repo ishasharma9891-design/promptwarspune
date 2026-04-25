@@ -20,7 +20,12 @@ const ChatInterface = () => {
   return (
     <main className="flex flex-col h-full max-w-5xl mx-auto w-full relative z-10 px-4 py-6" role="main">
       <ChatHeader userLevel={userLevel} />
-      <section className="flex-1 overflow-y-auto scrollbar-hide space-y-6 pb-4" aria-label="Conversation history">
+      <section 
+        className="flex-1 overflow-y-auto scrollbar-hide space-y-6 pb-4" 
+        aria-label="Conversation history"
+        aria-live="polite"
+        aria-atomic="false"
+      >
         <AnimatePresence>
           {messages.map((msg) => (
             <ChatMessage 
