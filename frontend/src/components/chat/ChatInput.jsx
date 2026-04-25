@@ -24,7 +24,7 @@ const ChatInput = ({ input, setInput, handleSend, isLoading }) => (
       <button 
         type="submit"
         aria-label="Send message"
-        className="p-3 rounded-xl bg-gradient-to-r from-brand-primary to-brand-secondary text-white hover:opacity-90 transition-opacity disabled:opacity-50"
+        className="btn-primary p-3 rounded-xl disabled:opacity-50"
         disabled={!input.trim() || isLoading}
       >
         {isLoading ? <span className="animate-pulse" aria-hidden="true">...</span> : <Send className="w-5 h-5" aria-hidden="true" />}
